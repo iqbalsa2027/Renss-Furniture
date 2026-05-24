@@ -1,9 +1,11 @@
 import fs from "fs";
+import { v2 as cloudinary } from "cloudinary";
 import multer from "multer";
 import path from "path";
 import { fileURLToPath } from "url";
 import { Router } from "express";
 import { z } from "zod";
+import { env } from "../../config/env.js";
 import { HttpError } from "../../lib/http-error.js";
 import { authenticate } from "../../middleware/authenticate.js";
 import { asyncHandler } from "../../utils/async-handler.js";
@@ -13,6 +15,18 @@ const __dirname = path.dirname(__filename);
 const uploadsDirectory = path.resolve(__dirname, "../../../uploads");
 
 fs.mkdirSync(uploadsDirectory, { recursive: true });
+
+const hasCloudinaryConfig = Boolean(
+  env.CLOUDINARY_CLOUD_NAME && env.CLOUDINARY_API_KEY && env.CLOUDINARY_API_SECRET,
+);
+
+if (hasCloudinaryConfig) {
+  cloudinary.config({
+    cloud_name: env.CLOUDINARY_CLOUD_NAME,
+    api_key: env.CLOUDINARY_API_KEY,
+    api_secret: env.CLOUDINARY_API_SECRET,
+  });
+}
 
 const storage = multer.diskStorage({
   destination: (_request, _file, callback) => {
@@ -32,7 +46,7 @@ const storage = multer.diskStorage({
 });
 
 const upload = multer({
-  storage,
+  storage: hasCloudinaryConfig ? multer.memoryStorage() : storage,
   limits: {
     fileSize: 20 * 1024 * 1024,
   },
@@ -68,6 +82,27 @@ function resolveUploadFilePath(imageUrl) {
   return filePath;
 }
 
+function uploadToCloudinary(file) {
+  return new Promise((resolve, reject) => {
+    const uploadStream = cloudinary.uploader.upload_stream(
+      {
+        folder: "renss-furniture",
+        resource_type: "image",
+      },
+      (error, result) => {
+        if (error) {
+          reject(error);
+          return;
+        }
+
+        resolve(result);
+      },
+    );
+
+    uploadStream.end(file.buffer);
+  });
+}
+
 function uploadSingleImage(request, response, next) {
   upload.single("image")(request, response, (error) => {
     if (!error) {
@@ -92,6 +127,17 @@ uploadsRoutes.post(
       throw new HttpError(400, "File gambar wajib dipilih");
     }
 
+    if (hasCloudinaryConfig) {
+      const result = await uploadToCloudinary(request.file);
+
+      response.status(201).json({
+        fileName: result.public_id,
+        imageUrl: result.secure_url,
+      });
+
+      return;
+    }
+
     response.status(201).json({
       fileName: request.file.filename,
       imageUrl: `/uploads/${request.file.filename}`,
@@ -103,6 +149,24 @@ uploadsRoutes.delete(
   "/image",
   asyncHandler(async (request, response) => {
     const { imageUrl } = deleteImageSchema.parse(request.body);
+
+    if (imageUrl.startsWith("http://") || imageUrl.startsWith("https://")) {
+      if (hasCloudinaryConfig && imageUrl.includes("res.cloudinary.com")) {
+        const match = imageUrl.match(/\/upload\/(?:v\d+\/)?(.+)\.[a-zA-Z0-9]+$/);
+        const publicId = match?.[1];
+
+        if (publicId) {
+          await cloudinary.uploader.destroy(publicId, { resource_type: "image" }).catch(() => undefined);
+        }
+      }
+
+      response.json({
+        message: "Gambar berhasil dihapus",
+      });
+
+      return;
+    }
+
     const filePath = resolveUploadFilePath(imageUrl);
 
     if (filePath) {

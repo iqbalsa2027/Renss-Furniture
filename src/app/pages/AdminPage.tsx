@@ -16,6 +16,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../co
 import { Input } from "../components/ui/input";
 import { Textarea } from "../components/ui/textarea";
 import { adminApi } from "../lib/api";
+import { resolveAssetUrl } from "../lib/assets";
 import { formatCurrency } from "../lib/format";
 import type { AdminUser, Category, Product, Testimonial } from "../types/cms";
 
@@ -953,9 +954,7 @@ export function AdminPage() {
   }
 
   function formatImageUrl(imageUrl?: string | null) {
-    if (!imageUrl) return "";
-    if (imageUrl.startsWith("http://") || imageUrl.startsWith("https://")) return imageUrl;
-    return imageUrl;
+    return resolveAssetUrl(imageUrl);
   }
 
   if (!token) {

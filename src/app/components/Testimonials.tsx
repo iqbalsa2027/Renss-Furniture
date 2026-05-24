@@ -3,6 +3,7 @@ import { Star } from "lucide-react";
 import { motion, useInView } from "motion/react";
 import { Card } from "../components/ui/card";
 import { ImageWithFallback } from "../components/figma/ImageWithFallback";
+import { resolveAssetUrl } from "../lib/assets";
 import type { Testimonial } from "../types/cms";
 import { SectionState } from "./SectionState";
 
@@ -63,7 +64,7 @@ export function Testimonials({
                   <div className="flex items-center gap-4 mb-6">
                     <div className="relative w-16 h-16 rounded-full overflow-hidden">
                       <ImageWithFallback
-                        src={testimonial.imageUrl ?? ""}
+                        src={resolveAssetUrl(testimonial.imageUrl)}
                         alt={testimonial.customerName}
                         className="w-full h-full object-cover"
                       />

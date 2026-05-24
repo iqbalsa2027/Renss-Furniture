@@ -1,6 +1,7 @@
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useEffect, useMemo, useRef, useState, type TouchEvent } from "react";
 import { ImageWithFallback } from "../components/figma/ImageWithFallback";
+import { resolveAssetUrl } from "../lib/assets";
 
 export function ProductImageSlider({
   imageUrls,
@@ -16,7 +17,7 @@ export function ProductImageSlider({
   fit?: "cover" | "contain";
 }) {
   const images = useMemo(
-    () => (imageUrls ?? []).filter((imageUrl) => Boolean(imageUrl)),
+    () => (imageUrls ?? []).filter((imageUrl) => Boolean(imageUrl)).map((imageUrl) => resolveAssetUrl(imageUrl)),
     [imageUrls],
   );
   const [currentIndex, setCurrentIndex] = useState(0);
