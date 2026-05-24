@@ -989,7 +989,7 @@ export function AdminPage() {
                     type="email"
                     value={email}
                     onChange={(event) => setEmail(event.target.value)}
-                    placeholder="admin@renssfurniture.com"
+                    placeholder="Masukkan email"
                   />
                 </Field>
                 <Field label="Password">
