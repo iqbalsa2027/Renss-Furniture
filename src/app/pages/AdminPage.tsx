@@ -250,8 +250,8 @@ export function AdminPage() {
   const [isLoggingIn, setIsLoggingIn] = useState(false);
   const [loginError, setLoginError] = useState<string | null>(null);
   const [sessionNotice, setSessionNotice] = useState<string | null>(null);
-  const [email, setEmail] = useState("admin@renssfurniture.com");
-  const [password, setPassword] = useState("ChangeMe123!");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [activeTab, setActiveTab] = useState<AdminTab>("products");
 
   const [categories, setCategories] = useState<Category[]>([]);
